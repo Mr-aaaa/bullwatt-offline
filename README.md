@@ -1,0 +1,38 @@
+# BullWatt 安卓离线试用
+
+## 安卓开始使用
+
+1. 把试用压缩包中的 site 目录内容上传到你能访问的 HTTPS 静态站点。也可用下方 GitHub Pages 方法。首次打开需联网。
+2. 在安卓 Chrome 打开网站，等到右上角显示「离线已就绪」。通过 Chrome 菜单选择「安装应用」或「添加到主屏幕」。
+3. 保持蓝牙开启，关闭正在占用设备的其他训练应用。点击「连接骑行台」选择 GEOID VE200，再连接心率设备。
+4. 设一个适合你的低功率，点击「开始训练」。观察指令是否被设备接受，以及实际功率、踏频和心率。设备范围或增量未报告时，页面使用 0–600 W 的应用限值。
+5. 保持页面在前台。暂停、降功率和结束后留意设备反馈。骑行台一旦断开，页面无法知道当前阻力。重连后点击「继续训练」才会重新下发目标。
+6. 在「历史」打开训练报告或导出 CSV / TCX。在「设置」导出 JSON 备份，可在新设备或新站点导入。
+7. 验证离线时，先等缓存就绪，再关闭网络、保持蓝牙开启，从主屏幕重新打开。确认两台设备可连接，并完成一次短训练。
+
+Chrome 需要安全的访问地址。安卓上的普通局域网 HTTP 和直接打开本地 HTML 文件无法作为这个版本的蓝牙入口。数据保存在浏览器，清除站点数据前请备份。异常关闭最多只能恢复最后一次保存成功的记录。
+
+## 通过 GitHub Pages 发布
+
+1. 将源码包解压后上传到你自己的 GitHub 仓库，保留 .github/workflows/offline-pages.yml。源码包已包含固定版本的 Auuki；若使用原仓库检出和改动，则使用仓库的 Auuki 子模块。
+2. 若 fork 沿用了上游的 SCP 部署工作流，在你的 fork 中停用该工作流。
+3. 在仓库 Settings → Pages → Build and deployment → Source 选择 GitHub Actions。
+4. 在 Actions 中选中「Deploy BullWatt Offline」，点「Run workflow」。成功后，在该运行页面查看实际访问地址。
+5. 用安卓 Chrome 打开该地址。之后改动可再次运行这个工作流。
+
+也可以直接把静态试用包的 site 目录发布到现有 HTTPS 托管，无需 GitHub Actions。
+
+## 在本机预览和构建
+
+需要 Node.js 24 和 Python 3。进入仓库目录后运行：
+
+```powershell
+node --test tests/offline.test.mjs
+node scripts/build-offline.mjs
+python scripts/package-offline.py
+python -m http.server 8787 --bind 127.0.0.1 --directory dist
+```
+
+在电脑 Chrome 打开 http://localhost:8787/。如果只预览已解压的试用包，最后一行的目录改为 site。手机真机试用请使用 HTTPS 静态地址。
+
+来源为 BullWatt 和其固定版本的 Auuki。静态包包含相应许可证和本版源码下载。

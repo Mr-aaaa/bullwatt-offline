@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>BullWatt · 离线训练</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<header class="top">
+  <div><a href="./" class="brand">BullWatt</a><span class="edition">离线训练</span></div>
+  <span id="offline" class="badge" role="status">正在检查离线缓存</span>
+</header>
+<main>
+  <nav aria-label="页面">
+    <button data-page="training" aria-current="page">训练</button>
+    <button data-page="history">历史</button>
+    <button data-page="settings">设置</button>
+  </nav>
+  <section id="training">
+    <h1>自由训练</h1>
+    <div class="devices">
+      <button id="trainer">连接骑行台</button><button id="heart">连接心率设备</button>
+      <small id="trainer-state">未连接</small><small id="heart-state">未连接</small>
+    </div>
+    <div id="recovery" class="panel notice" hidden>
+      <p>找到上次未结束的训练。</p>
+      <button id="recover">恢复为暂停</button><button id="interrupt">保存为中断记录</button>
+    </div>
+    <p id="message" class="notice" role="status" hidden></p>
+    <div class="panel instruments">
+      <div class="primary-reading"><span>实际功率</span><strong id="power">—</strong><span>W</span></div>
+      <div class="target-reading"><span>目标功率</span><strong id="target">50</strong><span>W</span></div>
+      <div class="metrics">
+        <div>心率 <strong id="hr">—</strong><small>bpm</small></div>
+        <div>踏频 <strong id="cadence">—</strong><small>rpm</small></div>
+        <div>有效时间 <strong id="duration">00:00</strong></div>
+        <div>平均功率 <strong id="average">—</strong><small>W</small></div>
+      </div>
+    </div>
+    <div class="panel controls">
+      <h2>调节功率</h2>
+      <form id="power-form" class="row">
+        <label for="watts">目标 W</label><input id="watts" inputmode="numeric" type="text" value="50" required>
+        <button type="submit">应用</button>
+      </form>
+      <div class="row adjust">
+        <button id="less">−5 W</button>
+        <label>步长 <select id="step"><option>1</option><option selected>5</option><option>10</option></select> W</label>
+        <button id="more">+5 W</button>
+      </div>
+      <div id="presets" class="row presets"></div>
+      <p id="range" class="aux">连接骑行台后读取设备范围</p>
+      <p id="command" class="aux" role="status">开始训练后下发目标功率</p>
+    </div>
+    <div class="operation row">
+      <button id="start" class="primary" disabled>开始训练</button>
+      <button id="lower" disabled>降功率</button><button id="finish" disabled>结束</button>
+    </div>
+    <p id="save-state" class="aux" role="status">训练记录保存在此浏览器</p>
+    <button id="rescue" hidden>导出当前记录备份</button>
+    <div class="panel"><h2>最近 2 分钟</h2><div id="live"></div></div>
+  </section>
+  <section id="history" hidden>
+    <h1>训练历史</h1>
+    <p id="history-status" role="status"></p>
+    <div id="rides" class="ride-list"></div>
+    <article id="report" class="panel" hidden>
+      <h2 id="report-name"></h2><p id="report-summary"></p>
+      <div id="report-chart"></div>
+      <ul id="report-events"></ul>
+      <div class="row"><button id="csv">导出 CSV</button><button id="tcx">导出 TCX</button><button id="delete">删除</button></div>
+    </article>
+  </section>
+  <section id="settings" hidden>
+    <h1>设置</h1>
+    <div class="panel">
+      <h2>快捷功率</h2>
+      <form id="preset-form" class="row">
+        <label for="preset-input">最多四个瓦数，用逗号分隔</label>
+        <input id="preset-input" value="80, 120, 160, 200" required><button>保存</button>
+      </form>
+      <p id="settings-status" role="status"></p>
+    </div>
+    <div class="panel">
+      <h2>训练数据</h2>
+      <p>换手机或清除浏览器数据前，请导出备份。</p>
+      <div class="row"><button id="backup">导出全部备份</button>
+      <label class="file-button">导入备份 <input id="import" type="file" accept=".json,application/json"></label></div>
+    </div>
+    <div class="panel"><h2>安卓试用</h2>
+      <p>在 Chrome 中通过 HTTPS 打开，等页面显示「离线已就绪」，然后添加到主屏幕。骑行时保持应用在前台。</p>
+      <p><a href="./source.zip" download>下载本版本源码</a> · <a href="./LICENSE">AGPL 许可证</a></p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
