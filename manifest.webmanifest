@@ -2,12 +2,12 @@
   "id": "./",
   "start_url": "./",
   "scope": "./",
-  "name": "BullWatt 离线训练",
-  "short_name": "BullWatt",
+  "name": "骑行训练",
+  "short_name": "骑行训练",
   "lang": "zh-CN",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#f3f6fa",
+  "theme_color": "#14212d",
+  "background_color": "#14212d",
   "icons": [
     {"src":"./assets/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},
     {"src":"./assets/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}

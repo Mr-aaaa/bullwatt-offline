@@ -3,76 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#14212d">
   <link rel="icon" href="./assets/android-chrome-192x192.png" type="image/png">
-  <title>BullWatt · 离线训练</title>
+  <title>骑行训练</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./app.mjs"></script>
 </head>
 <body>
 <header class="top">
-  <div><a href="./" class="brand">BullWatt</a><span class="edition">离线训练</span></div>
+  <a href="./" class="brand">骑行训练</a>
   <span id="offline" class="badge" role="status">正在检查离线缓存</span>
 </header>
 <main>
-  <nav aria-label="页面">
-    <button data-page="training" aria-current="page">训练</button>
-    <button data-page="history">历史</button>
-    <button data-page="settings">设置</button>
-  </nav>
-  <section id="training">
-    <h1>自由训练</h1>
-    <div class="devices">
-      <button id="trainer">连接骑行台</button><button id="heart">连接心率设备</button>
-      <small id="trainer-state">未连接</small><small id="heart-state">未连接</small>
+
+
+  <section id="training" aria-label="骑行训练">
+    <div class="ride-top">
+      <button id="connection-summary" data-connected="false" class="connection">连接设备</button>
+      <div class="timer" title="只累计实际功率大于 0 W 的训练时间"><small>训练时长</small><strong id="duration">00:00</strong></div>
     </div>
-    <div id="recovery" class="panel notice" hidden>
+    <div id="recovery" class="notice" hidden>
       <p>找到上次未结束的训练。</p>
       <button id="recover">恢复为暂停</button><button id="interrupt">保存为中断记录</button>
     </div>
     <p id="message" class="notice" role="status" hidden></p>
-    <div class="panel instruments">
-      <div class="primary-reading"><span>实际功率</span><div class="reading-value"><strong id="power">—</strong><small>W</small></div></div>
-      <div class="secondary-readings">
-        <div id="heart-card" class="reading-card" data-zone="none">
-          <span>心率 <span class="pulse" aria-hidden="true"></span></span>
-          <div class="reading-value"><strong id="hr">—</strong><small>bpm</small></div>
-          <span id="heart-zone" class="zone-label" aria-live="polite">等待心率</span>
-        </div>
-        <div class="reading-card cadence-card">
-          <span>踏频</span><div class="reading-value"><strong id="cadence">—</strong><small>rpm</small></div>
-        </div>
+    <div class="instrument">
+      <div class="reading-card power-card">
+        <span class="reading-label">实际功率</span>
+        <div class="reading-value"><strong id="power">—</strong><small>W</small></div>
+        <span id="command" class="reading-info" role="status">开始后下发目标功率</span>
       </div>
-      <div class="metrics">
-        <div>目标功率 <strong id="target">50</strong><small>W</small></div>
-        <div>有效时间 <strong id="duration">00:00</strong></div>
-        <div>平均功率 <strong id="average">—</strong><small>W</small></div>
-        <div>台上速度 <strong id="speed">—</strong><small>km/h</small></div>
+      <div class="reading-card cadence-card">
+        <span class="reading-label">踏频</span>
+        <div class="reading-value"><strong id="cadence">—</strong><small>rpm</small></div>
+        <span id="cadence-average" class="reading-info">平均 — rpm</span>
+      </div>
+      <div id="heart-card" class="reading-card heart-card" data-zone="none">
+        <span class="reading-label">心率 <span class="pulse" aria-hidden="true"></span></span>
+        <div class="reading-value"><strong id="hr">—</strong><small>bpm</small></div>
+        <span id="heart-zone" class="reading-info zone-label" aria-live="polite">等待心率</span>
+        <div id="zone-meter" class="zone-meter" data-ready="false" aria-label="最大心率分区参考">
+          <div class="zone-track">
+            <span data-band="easy"></span><span data-band="moderate"></span><span data-band="aerobic"></span><span data-band="high"></span>
+            <i class="zone-pointer" aria-hidden="true"></i>
+          </div>
+          <div class="zone-names"><span data-band="easy">轻松</span><span data-band="moderate">燃脂</span><span data-band="aerobic">有氧</span><span data-band="high">无氧</span></div>
+        </div>
       </div>
     </div>
-    <div class="panel controls">
-      <h2>调节功率</h2>
-      <form id="power-form" class="row">
-        <label for="watts">目标 W</label><input id="watts" inputmode="numeric" type="text" value="50" required>
-        <button type="submit">应用</button>
+    <div class="target-wrap">
+      <form id="power-form" class="target-control">
+        <button id="less" type="button" aria-label="减少 5 W">−</button>
+        <div class="target-value"><label for="watts">目标</label><input id="watts" inputmode="numeric" type="text" value="50" required aria-label="目标功率瓦数"><span>W</span><button type="submit" class="apply">应用</button></div>
+        <button id="more" type="button" aria-label="增加 5 W">+</button>
       </form>
-      <div class="row adjust">
-        <button id="less">−5 W</button>
-        <label>步长 <select id="step"><option>1</option><option selected>5</option><option>10</option></select> W</label>
-        <button id="more">+5 W</button>
-      </div>
-      <div id="presets" class="row presets"></div>
-      <p id="range" class="aux">连接骑行台后读取设备范围</p>
-      <p id="command" class="aux" role="status">开始训练后下发目标功率</p>
+      <div id="presets" class="presets"></div>
     </div>
-    <div class="operation row">
+    <div class="trend"><h2>最近 2 分钟</h2><div id="live"></div></div>
+    <div class="metrics">
+      <span>平均功率 <strong id="average">—</strong> W</span>
+      <span>台上速度 <strong id="speed">—</strong> km/h</span>
+    </div>
+    <div class="operation">
       <button id="start" class="primary" disabled>开始训练</button>
-      <button id="lower" disabled>降功率</button><button id="finish" disabled>结束</button>
+      <button id="finish" disabled>结束并保存</button>
     </div>
-    <p id="save-state" class="aux" role="status">训练记录保存在此浏览器</p>
+    <p id="save-state" class="aux save-state" role="status">记录保存在此浏览器</p>
     <button id="rescue" hidden>导出当前记录备份</button>
-    <div class="panel"><h2>最近 2 分钟</h2><div id="live"></div></div>
+    <details id="device-options" class="device-options">
+      <summary>设备与控制</summary>
+      <div class="devices">
+        <button id="trainer">连接骑行台</button><button id="heart">连接心率设备</button>
+        <small id="trainer-state">未连接</small><small id="heart-state">未连接</small>
+      </div>
+      <div class="row">
+        <label>调节幅度 <select id="step"><option>1</option><option selected>5</option><option>10</option></select> W</label>
+        <button id="lower" disabled>降功率</button>
+      </div>
+      <p id="range" class="aux">连接骑行台后读取设备范围</p>
+    </details>
   </section>
   <section id="history" hidden>
     <h1>训练历史</h1>
@@ -95,7 +105,7 @@
         <input id="max-hr" type="number" inputmode="numeric" min="60" max="250" step="1" placeholder="bpm">
         <button>保存</button>
       </form>
-      <p class="aux">按最大心率比例显示训练参考区间：低于 50% 为轻松，50% 至不足 70% 为中等（常称燃脂区），70% 至不足 85% 为有氧较高强度，85% 起为高强度。留空关闭区间提示。</p>
+      <p class="aux">按最大心率比例显示训练参考区间：低于 50% 为轻松，50% 至不足 70% 为中等（常称燃脂区），70% 至不足 85% 为有氧，85% 起为无氧训练参考。分区仅按最大心率比例估算。留空关闭区间提示。</p>
       <p id="heart-zone-status" role="status"></p>
     </div>
     <div class="panel">
@@ -114,7 +124,7 @@
     </div>
     <div class="panel">
       <h2>应用更新</h2>
-      <p>版本 2026.11.17.2 · 三项训练仪表与轻量导出</p>
+      <p>版本 2026.11.18.1 · 骑行训练</p>
       <p>先结束训练，再更新。</p>
       <button id="app-update">检查并更新应用</button>
       <p id="update-status" role="status"></p>
@@ -124,6 +134,11 @@
       <p><a href="./source.zip" download>下载本版本源码</a> · <a href="./LICENSE">AGPL 许可证</a></p>
     </div>
   </section>
+  <nav aria-label="页面">
+    <button data-page="training" aria-current="page">训练</button>
+    <button data-page="history">历史</button>
+    <button data-page="settings">设置</button>
+  </nav>
 </main>
 </body>
 </html>

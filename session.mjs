@@ -12,8 +12,17 @@ export function heartZone(bpm, maxBpm) {
 
 export function sample(ride, now, duration, readings) {
   if (!Number.isFinite(duration) || duration <= 0 || duration > 5) return false;
-  ride.activeSeconds += duration;
-  const point = { timestamp: new Date(now).toISOString(), elapsedSeconds: ride.activeSeconds, durationSeconds: duration };
+  let elapsed;
+  if (ride.durationMode === 'positive-power') {
+    ride.recordedSeconds = (ride.recordedSeconds ?? 0) + duration;
+    if (Number.isFinite(readings.power) && readings.power > 0) ride.activeSeconds += duration;
+    elapsed = ride.recordedSeconds;
+  } else {
+    // Existing sessions retain their original recording-time duration.
+    ride.activeSeconds += duration;
+    elapsed = ride.activeSeconds;
+  }
+  const point = { timestamp: new Date(now).toISOString(), elapsedSeconds: elapsed, durationSeconds: duration };
   for (const field of fields) point[field] = Number.isFinite(readings[field]) ? readings[field] : null;
   ride.samples.push(point);
   return true;
@@ -64,11 +73,14 @@ export function compactReport(ride) {
     format: 'bullwatt-summary-v1',
     started_at: ride.startedAt,
     active_s: round(ride.activeSeconds),
+    ...(ride.durationMode === 'positive-power' ? {
+      duration_basis: 'power_above_zero', recorded_s: round(ride.recordedSeconds),
+    } : {}),
     metrics: Object.fromEntries(keys.map(field => [metrics[field], {
       mean: round(stats[field].mean), max: round(stats[field].max), recorded_s: round(stats[field].seconds),
     }])),
     interval_s: interval,
-    columns: ['active_start_s', 'sampled_s', ...Object.values(metrics)],
+    columns: [ride.durationMode === 'positive-power' ? 'recorded_start_s' : 'active_start_s', 'sampled_s', ...Object.values(metrics)],
     trend: [...buckets].sort(([a], [b]) => a - b).map(([start, bucket]) => [
       start, round(bucket.seconds),
       ...bucket.values.map(value => value.seconds ? round(value.sum / value.seconds) : null),
@@ -104,7 +116,10 @@ export function validateBackup(data) {
         typeof ride.name !== 'string' || !validDate(ride.startedAt) ||
         (ride.endedAt !== null && !validDate(ride.endedAt)) ||
         !['running', 'paused', 'completed', 'interrupted'].includes(ride.status) ||
-        !nonnegative(ride.activeSeconds) || !Array.isArray(ride.events) ||
+        !nonnegative(ride.activeSeconds) ||
+        (ride.durationMode !== undefined && (ride.durationMode !== 'positive-power' || !nonnegative(ride.recordedSeconds) ||
+          ride.activeSeconds > ride.recordedSeconds)) ||
+        !Array.isArray(ride.events) ||
         !ride.events.every(event => typeof event?.reason === 'string' && validDate(event.timestamp)) ||
         !Array.isArray(ride.samples) || !ride.samples.every(point =>
           validDate(point?.timestamp) && nonnegative(point.elapsedSeconds) &&

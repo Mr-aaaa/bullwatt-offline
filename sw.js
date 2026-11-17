@@ -1,6 +1,6 @@
 const scope = self.registration.scope;
 const prefix = 'bullwatt-offline:' + scope + ':';
-const version = "c322073e951767af";
+const version = "90257ed6f88c9280";
 const cacheName = prefix + version;
 const relativeAssets = ["./app.mjs","./assets/android-chrome-192x192.png","./assets/android-chrome-512x512.png","./bluetooth.mjs","./charts.mjs","./control.mjs","./dependencies/auuki/src/ble/ftms/control-point.js","./dependencies/auuki/src/ble/ftms/indoor-bike-data.js","./dependencies/auuki/src/ble/hrs/heart-rate-measurement.js","./dependencies/auuki/src/functions.js","./index.html","./manifest.webmanifest","./session.mjs","./storage.mjs","./styles.css","./update.mjs"];
 const entry = new URL('./index.html', scope).href;

@@ -39,7 +39,7 @@ try {
   // The dashboard still works when browser storage is unavailable.
 }
 const zoneLabels = {
-  easy: '轻松区', moderate: '中等 · 燃脂区', aerobic: '有氧 · 较高强度', high: '高强度区',
+  easy: '轻松', moderate: '燃脂', aerobic: '有氧', high: '无氧',
 };
 
 const readings = {};
@@ -74,6 +74,8 @@ function updateButtons() {
   const running = ride?.status === 'running';
   el('start').disabled = checkingRecovery || transition || !!pendingRecovery || (!running && !trainer.connected);
   text('start', running ? '暂停训练' : ride ? '继续训练' : '开始训练');
+  text('connection-summary', trainer.connected ? (heart.connected ? '骑行台 · 心率已连接' : '骑行台已连接') : '连接设备');
+  el('connection-summary').dataset.connected = String(!!trainer.connected);
   el('finish').disabled = !ride || transition;
   el('lower').disabled = !running || transition || !trainer.connected;
   el('app-update').disabled = !!ride || transition || checkingRecovery || !!pendingRecovery;
@@ -85,10 +87,12 @@ function updateButtons() {
 
 function updatePowerDisplay() {
   el('watts').value = requested;
-  text('target', display(requested));
   const { min, max, step } = range();
   const note = trainer.rangeVerified && trainer.connected ? '设备范围' : '应用限值（未读取到设备范围）';
   text('range', note + ' ' + min + '–' + max + ' W · 增量 ' + step + ' W');
+  for (const button of el('presets').children) {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.watts) === requested));
+  }
 }
 
 async function connect(key) {
@@ -271,8 +275,9 @@ async function start() {
     check();
     if (!ride) {
       ride = {
-        id: crypto.randomUUID(), schemaVersion: 1, name: '自由训练',
+        id: crypto.randomUUID(), schemaVersion: 1, name: '骑行训练',
         startedAt: iso(), endedAt: null, status: 'running', activeSeconds: 0,
+        durationMode: 'positive-power', recordedSeconds: 0,
         trainerName: names.trainer, heartRateDeviceName: names.heart || null,
         samples: [], events: [],
       };
@@ -356,6 +361,7 @@ function renderTraining() {
   renderHeartZone(hr);
   text('duration', clock(ride?.activeSeconds ?? 0));
   text('average', display(ride ? summary(ride).power.mean : null));
+  text('cadence-average', '平均 ' + display(ride ? summary(ride).cadence.mean : null) + ' rpm');
   if (trainer.connected) text('trainer-state', names.trainer + (power == null ? ' · 暂无功率数据' : ' · 数据正常'));
   if (heart.connected) text('heart-state', names.heart + (hr == null ? ' · 暂无心率数据' : ' · 数据正常'));
   if (!el('training').hidden) {
@@ -368,11 +374,26 @@ function renderTraining() {
 function renderHeartZone(hr) {
   const card = el('heart-card');
   const zone = heartZone(hr, maxHeartRate);
-  const label = zoneLabels[zone] ?? (hr == null ? '等待心率' : '在设置中填写最大心率');
+  let label = zoneLabels[zone] ?? (hr == null ? '等待心率' : '设置最大心率');
+  if (zone) {
+    const limits = { easy: [0, .5], moderate: [.5, .7], aerobic: [.7, .85], high: [.85, null] }[zone];
+    const low = Math.ceil(maxHeartRate * limits[0]);
+    label += limits[1] === null ? ' · ≥' + low + ' bpm' : ' · ' + low + '–' + (Math.ceil(maxHeartRate * limits[1]) - 1) + ' bpm';
+  }
   card.dataset.zone = zone ?? 'none';
   if (el('heart-zone').textContent !== label) text('heart-zone', label);
   if (zone) card.style.setProperty('--beat', (60 / Math.max(40, Math.min(220, hr))).toFixed(3) + 's');
   else card.style.removeProperty('--beat');
+  const meter = el('zone-meter');
+  meter.dataset.ready = String(!!zone);
+  const position = zone ? Math.max(0, Math.min(100, (hr / maxHeartRate - .4) / .6 * 100)) : 0;
+  meter.style.setProperty('--position', position.toFixed(1) + '%');
+  for (const part of meter.querySelectorAll('[data-band]')) {
+    part.classList.toggle('current', zone === part.dataset.band);
+    const band = part.dataset.band;
+    const labels = { easy: '轻松 <50%', moderate: '燃脂 50–70%', aerobic: '有氧 70–85%', high: '无氧 ≥85%' };
+    part.title = labels[band] + ' 最大心率';
+  }
 }
 
 let historyRevision = 0;
@@ -392,7 +413,8 @@ function selectReport(record) {
   selected = record;
   const stats = summary(record);
   text('report-name', record.name + ' · ' + date(record.startedAt));
-  text('report-summary', clock(record.activeSeconds) + ' · 功率 平均 ' + display(stats.power.mean) +
+  const durationLabel = record.durationMode === 'positive-power' ? '输出功率时长 ' : '记录时长 ';
+  text('report-summary', durationLabel + clock(record.activeSeconds) + ' · 功率 平均 ' + display(stats.power.mean) +
     ' / 最大 ' + display(stats.power.max) + ' W · 心率 平均 ' + display(stats.heartRate.mean) +
     ' / 最大 ' + display(stats.heartRate.max) + ' bpm');
   drawCharts(el('report-chart'), record.samples);
@@ -506,20 +528,27 @@ function renderPresets() {
   el('presets').replaceChildren(...presets.map(value => {
     const button = document.createElement('button');
     button.textContent = value + ' W';
+    button.dataset.watts = value;
+    button.setAttribute('aria-pressed', String(value === requested));
     button.onclick = () => applyPower(value);
     return button;
   }));
 }
 
 el('trainer').onclick = () => connect('trainer');
+el('connection-summary').onclick = () => {
+  const options = el('device-options');
+  options.open = !options.open;
+  if (options.open) options.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
 el('heart').onclick = () => connect('heart');
 el('start').onclick = () => ride?.status === 'running' ? pause('手动暂停') : start();
 el('finish').onclick = finish;
 el('lower').onclick = () => applyPower(lowerTarget());
 el('power-form').onsubmit = event => { event.preventDefault(); applyPower(el('watts').value); };
 el('step').onchange = () => {
-  text('less', '−' + el('step').value + ' W');
-  text('more', '+' + el('step').value + ' W');
+  el('less').setAttribute('aria-label', '减少 ' + el('step').value + ' W');
+  el('more').setAttribute('aria-label', '增加 ' + el('step').value + ' W');
 };
 function adjust(direction) {
   const delta = Math.max(Number(el('step').value), range().step);

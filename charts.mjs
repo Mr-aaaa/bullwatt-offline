@@ -53,7 +53,7 @@ export function drawCharts(container, points) {
   const start = Date.parse(points[0]?.timestamp);
   const end = Date.parse(points.at(-1)?.timestamp);
   container.replaceChildren(
-    plot('功率 W · 蓝色实际 / 灰色已接受目标', points, [['power', '#0756e4'], ['acceptedPower', '#697b91']], start, end),
-    plot('心率 bpm', points, [['heartRate', '#a43151']], start, end),
+    plot('功率 W · 绿色实际 / 灰色目标', points, [['power', '#72dfbc'], ['acceptedPower', '#829bab']], start, end),
+    plot('心率 bpm', points, [['heartRate', '#ffca80']], start, end),
   );
 }
