@@ -327,14 +327,18 @@ async function finish() {
 
 function applyPower(value) {
   if (transition) return;
+  let changed;
   try {
-    requested = normalizePower(value, range());
+    const watts = normalizePower(value, range());
+    changed = watts !== requested;
+    requested = watts;
     updatePowerDisplay();
     show('message', '');
   } catch (error) {
     show('message', error.message);
     return;
   }
+  if (!changed) return;
   if (ride?.status !== 'running') {
     text('command', '目标已设置，开始或继续训练后下发');
     return;
@@ -546,6 +550,12 @@ el('start').onclick = () => ride?.status === 'running' ? pause('手动暂停') :
 el('finish').onclick = finish;
 el('lower').onclick = () => applyPower(lowerTarget());
 el('power-form').onsubmit = event => { event.preventDefault(); applyPower(el('watts').value); };
+el('watts').onchange = () => applyPower(el('watts').value);
+el('watts').onkeydown = event => {
+  if (event.key !== 'Enter' || event.isComposing) return;
+  event.preventDefault();
+  el('power-form').requestSubmit();
+};
 el('step').onchange = () => {
   el('less').setAttribute('aria-label', '减少 ' + el('step').value + ' W');
   el('more').setAttribute('aria-label', '增加 ' + el('step').value + ' W');

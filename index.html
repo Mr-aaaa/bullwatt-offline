@@ -55,7 +55,7 @@
     <div class="target-wrap">
       <form id="power-form" class="target-control">
         <button id="less" type="button" aria-label="减少 5 W">−</button>
-        <div class="target-value"><label for="watts">目标</label><input id="watts" inputmode="numeric" type="text" value="50" required aria-label="目标功率瓦数"><span>W</span><button type="submit" class="apply">应用</button></div>
+        <div class="target-value"><label for="watts">目标</label><input id="watts" inputmode="numeric" enterkeyhint="done" type="text" value="50" required aria-label="目标功率瓦数，回车或离开输入框生效"><span>W</span></div>
         <button id="more" type="button" aria-label="增加 5 W">+</button>
       </form>
       <div id="presets" class="presets"></div>
@@ -124,7 +124,7 @@
     </div>
     <div class="panel">
       <h2>应用更新</h2>
-      <p>版本 2026.11.18.1 · 骑行训练</p>
+      <p>版本 2026.11.18.2 · 骑行训练</p>
       <p>先结束训练，再更新。</p>
       <button id="app-update">检查并更新应用</button>
       <p id="update-status" role="status"></p>

@@ -58,7 +58,6 @@ p{margin:8px 0}
 .target-control>button{border:0;background:#ffffff08;color:#bce6dc;font-size:26px;line-height:1;padding:0}
 .target-value{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;font-size:12px;color:var(--muted)}
 .target-value input{width:68px;min-width:0;text-align:center;font-size:23px;color:var(--text);font-variant-numeric:tabular-nums;border:0;background:transparent;padding:4px}
-.target-value .apply{min-height:34px;font-size:11px;padding:5px 6px;border:0;color:var(--mint);background:transparent}
 .presets{display:flex;gap:8px;margin-top:14px}
 .presets button{flex:1;font-size:12px;color:#a8bdc8;border-radius:9px;min-height:34px;padding:5px}
 .presets button[aria-pressed="true"]{color:var(--mint);background:#72dfbc0b;border-color:#72dfbc4d}
