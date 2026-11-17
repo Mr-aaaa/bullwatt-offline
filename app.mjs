@@ -3,6 +3,7 @@ import { LatestPower, fallbackRange, normalizePower } from './control.mjs';
 import { sample, summary, csv, tcx, validateBackup, compactReport, heartZone } from './session.mjs';
 import { openStore, dbRequest, restore } from './storage.mjs';
 import { drawCharts } from './charts.mjs';
+import { updateApplication } from './update.mjs';
 
 const el = id => document.getElementById(id);
 const text = (id, value) => { el(id).textContent = value; };
@@ -75,6 +76,7 @@ function updateButtons() {
   text('start', running ? '暂停训练' : ride ? '继续训练' : '开始训练');
   el('finish').disabled = !ride || transition;
   el('lower').disabled = !running || transition || !trainer.connected;
+  el('app-update').disabled = !!ride || transition || checkingRecovery || !!pendingRecovery;
   for (const key of Object.keys(devices)) {
     el(key).disabled = connectionBusy[key] || (key === 'trainer' && transition);
     text(key, (devices[key].connected ? '断开' : '连接') + connectedLabels[key]);
@@ -620,6 +622,21 @@ document.addEventListener('visibilitychange', () => {
   if (ride?.status === 'running') pause('页面切到后台');
   else if (transition) operation++;
 });
+el('app-update').onclick = async () => {
+  if (ride || transition || pendingRecovery || checkingRecovery) return;
+  if (!confirm('已结束训练并关闭其他 BullWatt 页面？现在更新应用。')) return;
+  transition = true;
+  updateButtons();
+  text('update-status', '正在检查并下载新版…');
+  try {
+    await updateApplication();
+    location.reload();
+  } catch (error) {
+    text('update-status', '更新失败 · ' + error.message);
+    transition = false;
+    updateButtons();
+  }
+};
 setInterval(() => {
   const now = performance.now();
   if (ride?.status === 'running') {

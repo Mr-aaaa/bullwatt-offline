@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>更新 BullWatt</title>
+  <link rel="icon" href="./assets/android-chrome-192x192.png" type="image/png">
+  <style>
+    body{font:17px/1.7 system-ui,sans-serif;background:#f3f6fa;color:#14213d;margin:0;padding:24px}
+    main{max-width:520px;margin:24px auto;padding:24px;background:white;border-radius:12px}
+    h1{font-size:25px}button{font:inherit;padding:12px 18px;border:0;border-radius:8px;background:#0756e4;color:white;min-height:48px;cursor:pointer}
+    button:disabled{opacity:.5}a{color:#0756e4}button:focus-visible{outline:3px solid #14213d;outline-offset:3px}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>更新到最新版</h1>
+    <p>请先结束训练，并关闭其他打开的 BullWatt 页面。更新将重新载入应用，已保存的训练记录会保留。</p>
+    <button id="update">训练已结束，立即更新</button>
+    <p id="status" role="status"></p>
+    <p><a href="./">返回训练</a></p>
+  </main>
+  <script type="module">
+    import { updateApplication } from './update.mjs';
+    const button = document.getElementById('update');
+    const status = document.getElementById('status');
+    button.onclick = async () => {
+      button.disabled = true;
+      status.textContent = '正在下载并启用新版，请保持联网…';
+      try {
+        await updateApplication();
+        location.replace('./');
+      } catch (error) {
+        status.textContent = '更新失败 · ' + error.message;
+        button.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

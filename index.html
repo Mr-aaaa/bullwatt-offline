@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="./assets/android-chrome-192x192.png" type="image/png">
   <title>BullWatt · 离线训练</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
@@ -110,6 +111,13 @@
       <p>换手机或清除浏览器数据前，请导出备份。</p>
       <div class="row"><button id="backup">导出全部备份</button>
       <label class="file-button">导入备份 <input id="import" type="file" accept=".json,application/json"></label></div>
+    </div>
+    <div class="panel">
+      <h2>应用更新</h2>
+      <p>版本 2026.11.17.2 · 三项训练仪表与轻量导出</p>
+      <p>先结束训练，再更新。</p>
+      <button id="app-update">检查并更新应用</button>
+      <p id="update-status" role="status"></p>
     </div>
     <div class="panel"><h2>安卓试用</h2>
       <p>在 Chrome 中通过 HTTPS 打开，等页面显示「离线已就绪」，然后添加到主屏幕。骑行时保持应用在前台。</p>
