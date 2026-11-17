@@ -1,4 +1,14 @@
 const fields = ['power', 'requestedPower', 'acceptedPower', 'heartRate', 'cadence'];
+const metrics = { power: 'power_w', heartRate: 'heart_rate_bpm', cadence: 'cadence_rpm' };
+
+export function heartZone(bpm, maxBpm) {
+  if (!Number.isFinite(bpm) || bpm <= 0 || !Number.isFinite(maxBpm) || maxBpm <= 0) return null;
+  const percent = 100 * bpm / maxBpm;
+  if (percent < 50) return 'easy';
+  if (percent < 70) return 'moderate';
+  if (percent < 85) return 'aerobic';
+  return 'high';
+}
 
 export function sample(ride, now, duration, readings) {
   if (!Number.isFinite(duration) || duration <= 0 || duration > 5) return false;
@@ -10,7 +20,7 @@ export function sample(ride, now, duration, readings) {
 }
 
 export function summary(ride) {
-  return Object.fromEntries(['power', 'heartRate', 'cadence'].map(field => {
+  return Object.fromEntries(Object.keys(metrics).map(field => {
     let seconds = 0;
     let total = 0;
     let max = null;
@@ -22,6 +32,48 @@ export function summary(ride) {
     }
     return [field, { seconds, mean: seconds ? total / seconds : null, max }];
   }));
+}
+
+export function compactReport(ride) {
+  const interval = 30;
+  const keys = Object.keys(metrics);
+  const stats = summary(ride);
+  const buckets = new Map();
+  const round = value => value == null ? null : Math.round(value * 10) / 10;
+  for (const point of ride.samples) {
+    const end = point.elapsedSeconds;
+    let from = Math.max(0, end - point.durationSeconds);
+    while (from < end) {
+      const start = Math.floor(from / interval) * interval;
+      const edge = Math.min(end, start + interval);
+      const length = edge - from;
+      if (!buckets.has(start)) buckets.set(start, {
+        seconds: 0, values: keys.map(() => ({ sum: 0, seconds: 0 })),
+      });
+      const bucket = buckets.get(start);
+      bucket.seconds += length;
+      for (const [index, field] of keys.entries()) {
+        if (!Number.isFinite(point[field])) continue;
+        bucket.values[index].sum += point[field] * length;
+        bucket.values[index].seconds += length;
+      }
+      from = edge;
+    }
+  }
+  return {
+    format: 'bullwatt-summary-v1',
+    started_at: ride.startedAt,
+    active_s: round(ride.activeSeconds),
+    metrics: Object.fromEntries(keys.map(field => [metrics[field], {
+      mean: round(stats[field].mean), max: round(stats[field].max), recorded_s: round(stats[field].seconds),
+    }])),
+    interval_s: interval,
+    columns: ['active_start_s', 'sampled_s', ...Object.values(metrics)],
+    trend: [...buckets].sort(([a], [b]) => a - b).map(([start, bucket]) => [
+      start, round(bucket.seconds),
+      ...bucket.values.map(value => value.seconds ? round(value.sum / value.seconds) : null),
+    ]),
+  };
 }
 
 export function csv(ride) {

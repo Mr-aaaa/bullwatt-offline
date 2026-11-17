@@ -32,13 +32,22 @@
     </div>
     <p id="message" class="notice" role="status" hidden></p>
     <div class="panel instruments">
-      <div class="primary-reading"><span>实际功率</span><strong id="power">—</strong><span>W</span></div>
-      <div class="target-reading"><span>目标功率</span><strong id="target">50</strong><span>W</span></div>
+      <div class="primary-reading"><span>实际功率</span><div class="reading-value"><strong id="power">—</strong><small>W</small></div></div>
+      <div class="secondary-readings">
+        <div id="heart-card" class="reading-card" data-zone="none">
+          <span>心率 <span class="pulse" aria-hidden="true"></span></span>
+          <div class="reading-value"><strong id="hr">—</strong><small>bpm</small></div>
+          <span id="heart-zone" class="zone-label" aria-live="polite">等待心率</span>
+        </div>
+        <div class="reading-card cadence-card">
+          <span>踏频</span><div class="reading-value"><strong id="cadence">—</strong><small>rpm</small></div>
+        </div>
+      </div>
       <div class="metrics">
-        <div>心率 <strong id="hr">—</strong><small>bpm</small></div>
-        <div>踏频 <strong id="cadence">—</strong><small>rpm</small></div>
+        <div>目标功率 <strong id="target">50</strong><small>W</small></div>
         <div>有效时间 <strong id="duration">00:00</strong></div>
         <div>平均功率 <strong id="average">—</strong><small>W</small></div>
+        <div>台上速度 <strong id="speed">—</strong><small>km/h</small></div>
       </div>
     </div>
     <div class="panel controls">
@@ -72,11 +81,22 @@
       <h2 id="report-name"></h2><p id="report-summary"></p>
       <div id="report-chart"></div>
       <ul id="report-events"></ul>
-      <div class="row"><button id="csv">导出 CSV</button><button id="tcx">导出 TCX</button><button id="delete">删除</button></div>
+      <div class="row"><button id="compact">导出轻量 JSON</button><button id="csv">导出 CSV</button><button id="tcx">导出 TCX</button><button id="delete">删除</button></div>
+      <p class="aux">轻量 JSON 包含整场摘要和每 30 秒均值。</p>
     </article>
   </section>
   <section id="settings" hidden>
     <h1>设置</h1>
+    <div class="panel">
+      <h2>心率区间</h2>
+      <form id="heart-zone-form" class="row">
+        <label for="max-hr">我的最大心率</label>
+        <input id="max-hr" type="number" inputmode="numeric" min="60" max="250" step="1" placeholder="bpm">
+        <button>保存</button>
+      </form>
+      <p class="aux">按最大心率比例显示训练参考区间：低于 50% 为轻松，50% 至不足 70% 为中等（常称燃脂区），70% 至不足 85% 为有氧较高强度，85% 起为高强度。留空关闭区间提示。</p>
+      <p id="heart-zone-status" role="status"></p>
+    </div>
     <div class="panel">
       <h2>快捷功率</h2>
       <form id="preset-form" class="row">

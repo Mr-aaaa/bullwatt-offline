@@ -1,6 +1,6 @@
 import { Device } from './bluetooth.mjs';
 import { LatestPower, fallbackRange, normalizePower } from './control.mjs';
-import { sample, summary, csv, tcx, validateBackup } from './session.mjs';
+import { sample, summary, csv, tcx, validateBackup, compactReport, heartZone } from './session.mjs';
 import { openStore, dbRequest, restore } from './storage.mjs';
 import { drawCharts } from './charts.mjs';
 
@@ -30,6 +30,16 @@ let checkingRecovery = true;
 let operation = 0;
 let wakeLock;
 let wakePending = false;
+let maxHeartRate = null;
+try {
+  const value = Number(localStorage.getItem('bullwatt-max-heart-rate'));
+  if (Number.isInteger(value) && value >= 60 && value <= 250) maxHeartRate = value;
+} catch {
+  // The dashboard still works when browser storage is unavailable.
+}
+const zoneLabels = {
+  easy: '轻松区', moderate: '中等 · 燃脂区', aerobic: '有氧 · 较高强度', high: '高强度区',
+};
 
 const readings = {};
 const names = { trainer: '', heart: '' };
@@ -42,7 +52,7 @@ function liveValue(field) {
 }
 
 const trainer = new Device('trainer', values => {
-  for (const field of ['power', 'cadence']) {
+  for (const field of ['power', 'cadence', 'speed']) {
     if (Number.isFinite(values[field])) remember(field, values[field]);
   }
 }, () => disconnected('trainer'));
@@ -119,6 +129,7 @@ function disconnected(key) {
     accepted = null;
     delete readings.power;
     delete readings.cadence;
+    delete readings.speed;
     if (ride?.status === 'running') {
       markPaused('骑行台已断开');
       save(ride);
@@ -211,6 +222,7 @@ async function reducePower() {
     accepted = null;
     delete readings.power;
     delete readings.cadence;
+    delete readings.speed;
     text('trainer-state', '请重新连接');
     updatePowerDisplay();
   }
@@ -337,6 +349,9 @@ function renderTraining() {
   text('power', display(power));
   text('cadence', display(cadence));
   text('hr', display(hr));
+  const speed = liveValue('speed');
+  text('speed', speed == null ? '—' : speed.toFixed(1));
+  renderHeartZone(hr);
   text('duration', clock(ride?.activeSeconds ?? 0));
   text('average', display(ride ? summary(ride).power.mean : null));
   if (trainer.connected) text('trainer-state', names.trainer + (power == null ? ' · 暂无功率数据' : ' · 数据正常'));
@@ -346,6 +361,16 @@ function renderTraining() {
     const points = (ride?.samples ?? []).slice(-125).filter(point => Date.parse(point.timestamp) >= cutoff);
     drawCharts(el('live'), points);
   }
+}
+
+function renderHeartZone(hr) {
+  const card = el('heart-card');
+  const zone = heartZone(hr, maxHeartRate);
+  const label = zoneLabels[zone] ?? (hr == null ? '等待心率' : '在设置中填写最大心率');
+  card.dataset.zone = zone ?? 'none';
+  if (el('heart-zone').textContent !== label) text('heart-zone', label);
+  if (zone) card.style.setProperty('--beat', (60 / Math.max(40, Math.min(220, hr))).toFixed(3) + 's');
+  else card.style.removeProperty('--beat');
 }
 
 let historyRevision = 0;
@@ -506,6 +531,11 @@ el('rescue').onclick = () => backup([...unsaved.values()]);
 for (const button of document.querySelectorAll('[data-page]')) button.onclick = () => openPage(button.dataset.page);
 el('csv').onclick = () => { if (selected) download('bullwatt-' + selected.startedAt.slice(0, 10) + '.csv', csv(selected), 'text/csv'); };
 el('tcx').onclick = () => { if (selected) download('bullwatt-' + selected.startedAt.slice(0, 10) + '.tcx', tcx(selected), 'application/xml'); };
+el('compact').onclick = () => {
+  if (!selected) return;
+  const stamp = selected.startedAt.slice(0, 19).replaceAll(':', '-');
+  download('bullwatt-summary-' + stamp + '.json', JSON.stringify(compactReport(selected)), 'application/json');
+};
 el('delete').onclick = async () => {
   const id = selected?.id;
   if (!id || !confirm('删除这条训练记录？')) return;
@@ -569,6 +599,22 @@ el('preset-form').onsubmit = event => {
   }
 };
 
+el('max-hr').value = maxHeartRate ?? '';
+el('heart-zone-form').onsubmit = event => {
+  event.preventDefault();
+  const input = el('max-hr');
+  if (!input.reportValidity()) return;
+  maxHeartRate = input.value === '' ? null : input.valueAsNumber;
+  renderHeartZone(liveValue('heartRate'));
+  try {
+    if (maxHeartRate === null) localStorage.removeItem('bullwatt-max-heart-rate');
+    else localStorage.setItem('bullwatt-max-heart-rate', String(maxHeartRate));
+    text('heart-zone-status', maxHeartRate ? '最大心率已保存' : '已关闭区间提示');
+  } catch {
+    text('heart-zone-status', '浏览器无法保存设置，本次打开期间仍可使用');
+  }
+};
+
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) return;
   if (ride?.status === 'running') pause('页面切到后台');
@@ -591,7 +637,9 @@ async function prepareOffline() {
   try {
     const registration = await navigator.serviceWorker.register('./sw.js');
     const check = () => {
-      if (registration.active?.state === 'activated' || navigator.serviceWorker.controller) {
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        text('offline', '新版已缓存，结束后关闭页面再打开');
+      } else if (registration.active?.state === 'activated' || navigator.serviceWorker.controller) {
         text('offline', '离线已就绪');
       } else if (!registration.installing && !registration.waiting) {
         text('offline', '离线缓存未完成，请重新加载');

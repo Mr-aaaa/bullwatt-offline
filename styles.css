@@ -23,14 +23,29 @@ button:active:not(:disabled){background:#e7efff}
 small,.aux{color:#4f6179}
 .devices small{padding-left:4px;overflow-wrap:anywhere}
 .panel{background:white;border:1px solid #dbe4ef;border-radius:12px;padding:14px;margin:12px 0}
-.instruments{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
-.instruments strong,.metrics strong{font-variant-numeric:tabular-nums;display:block;line-height:1.1}
-.primary-reading,.target-reading{padding:6px 10px}
-.primary-reading strong{font-size:clamp(50px,13vw,92px);letter-spacing:-.045em}
-.target-reading strong{font-size:clamp(36px,9vw,64px);color:#0756e4}
-.metrics{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding-top:12px;border-top:1px solid #dbe4ef}
-.metrics div{font-size:13px;color:#4f6179}
-.metrics strong{font-size:clamp(17px,4.5vw,28px);color:#14213d;margin-top:4px}
+.instruments{display:grid;gap:10px}
+.instruments strong{font-variant-numeric:tabular-nums;line-height:1}
+.primary-reading{padding:16px;border-radius:8px;color:#fff;background:#14213d}
+.primary-reading small{color:#c9d9f0}
+.primary-reading strong{font-size:clamp(60px,17vw,104px);letter-spacing:-.06em}
+.reading-value{display:flex;align-items:baseline;gap:5px;white-space:nowrap;margin-top:5px}
+.secondary-readings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.reading-card{padding:10px;border-radius:8px;background:#edf3fb;color:#294461;min-width:0}
+.reading-card strong{font-size:clamp(33px,10vw,61px);letter-spacing:-.04em}
+.reading-card small{color:inherit}
+#heart-card{--zone-bg:#f0f3f7;--zone-fg:#465a73;background:var(--zone-bg);color:var(--zone-fg);transition:background-color .32s,color .32s}
+#heart-card[data-zone="easy"]{--zone-bg:#e8f1ff;--zone-fg:#174c9b}
+#heart-card[data-zone="moderate"]{--zone-bg:#dcf6e9;--zone-fg:#146040}
+#heart-card[data-zone="aerobic"]{--zone-bg:#fff1d2;--zone-fg:#844300}
+#heart-card[data-zone="high"]{--zone-bg:#ffe2e8;--zone-fg:#a02244}
+.zone-label{font-size:12px;line-height:1.3;display:block;margin-top:6px;font-weight:700}
+.pulse{display:none;width:9px;height:9px;border-radius:50%;background:currentColor;margin-left:4px}
+#heart-card:not([data-zone="none"]) .pulse{display:inline-block;animation:heartbeat var(--beat,1s) ease-out infinite}
+@keyframes heartbeat{0%,55%,100%{transform:scale(.85);opacity:.62}18%{transform:scale(1.35);opacity:1}}
+@media(prefers-reduced-motion:reduce){#heart-card{transition:none}#heart-card .pulse{animation:none!important}}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding-top:10px;border-top:1px solid #dbe4ef}
+.metrics div{font-size:12px;color:#4f6179}
+.metrics strong{display:block;font-size:clamp(15px,4vw,23px);color:#14213d;margin-top:4px}
 .row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .row input{min-width:0;flex:1}
 .adjust,.presets{margin-top:8px}
